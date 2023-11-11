@@ -366,66 +366,6 @@ def fetch_neowise(ra, dec):
     return neowise
 
 
-def download_atlas(name):
-    print('Fetching ATLAS')
-    os.system(f'python download_atlas_lc.py {name} -l 10000')
-
-
-def clean_atlas(name):
-    print('Cleaning ATLAS')
-    no_cyan, no_orange = False, False
-    os.system(f'python clean_atlas_lc.py {name} -x -u -g -p')
-    data_dir = "/Users/thomasmoore/Library/CloudStorage/OneDrive-Queen'sUniversityBelfast/TM/cleaned_light_curves/" + name + "/"
-    try:
-        ATLAS_orange = pd.read_csv(
-            data_dir + name + ".o.1.00days.lc.txt", delim_whitespace=True)
-        ATLAS_orange.insert(len(ATLAS_orange.columns), 'filter', 'o')
-    except Exception as e:
-        print('No ATLAS orange')
-        no_orange = True
-
-    try:
-        ATLAS_cyan = pd.read_csv(
-            data_dir + name + ".c.1.00days.lc.txt", delim_whitespace=True)
-        ATLAS_cyan.insert(len(ATLAS_cyan.columns), 'filter', 'c')
-    except Exception as e:
-        print('No ATLAS cyan')
-        no_cyan = True
-
-    if no_orange == True and no_cyan == True:
-        return None
-
-    if no_orange == False and no_cyan == False:
-        ATLAS = pd.concat([ATLAS_cyan, ATLAS_orange])
-
-    if no_orange == True:
-        ATLAS = ATLAS_cyan.copy()
-
-    if no_cyan == True:
-        ATLAS = ATLAS_orange.copy()
-
-    ATLAS_FORCED = ATLAS.copy()
-    ATLAS = ATLAS.rename(columns={"MJD": "mjd"})
-    ATLAS.insert(len(ATLAS.columns), 'telescope', 'ATLAS')
-    ATLAS = ATLAS.filter(['mjd', 'filter', 'm', 'dm', 'telescope'])
-    ATLAS = ATLAS.dropna()
-    return ATLAS, ATLAS_FORCED
-
-
-def fetch_atlas(name):
-    if not os.path.exists("/Users/thomasmoore/Library/CloudStorage/OneDrive-Queen'sUniversityBelfast/TM/cleaned_light_curves/" + name + "/"):
-        print('going to TNS to get data')
-        download_atlas(name)
-
-    data, data_forced = clean_atlas(name)
-    data = data.rename(columns={"filter": "band"})
-    data = data.rename(columns={"mjd": "time"})
-    data = data.rename(columns={"m": "magnitude"})
-    data = data.rename(columns={"dm": "e_magnitude"})
-
-    return data
-
-
 def fetch_panstarrs_forced(psname):
     appended_data = []
     candid_list = PS_to_internal_name(psname)
@@ -584,7 +524,6 @@ class TNS_interogate:
 class Heart_of_Gold:
 
     def __init__(self, TNS_NAME):
-        self.atlas_data = None
         self.pan_starrs_data = None
         self.gaia_data = None
         self.ztf_data = None
@@ -618,13 +557,6 @@ class Heart_of_Gold:
                 TNS_object.pan_starrs)
             self.data = pd.concat((self.data, self.pan_starrs_data))
 
-        print(self.data)
-
-        # Getting ATLAS
-        if TNS_object.atlas is not None:
-            self.atlas_data = fetch_atlas(TNS_object.TNS_name)
-            self.data = pd.concat((self.data, self.atlas_data))
-
         self.neowise_data = fetch_neowise(
             TNS_object.info['radeg'].item(), TNS_object.info['decdeg'].item())
         self.data = pd.concat((self.data, self.neowise_data))
@@ -639,7 +571,10 @@ def MARVIN(TNS_Name):
     tns_api_key = 'cb0fa7b0ddcc1ed5a4f18a82c1e01fb9092985ec'
     tns_api_headers = str(
         {'User-Agent': 'tns_marker{"tns_id":165250,"type": "bot", "name":"MARVIN"}'})
-    create_config(Lasair_token, tns_api_key, tns_api_headers)
     marvin_results = Heart_of_Gold(TNS_Name)
     marvin_results.data.to_csv(TNS_Name + '.csv', index=False)
     plot_marvin(marvin_results)
+
+
+if __name__ == "__main__":
+    MARVIN(sys.argv[1])
