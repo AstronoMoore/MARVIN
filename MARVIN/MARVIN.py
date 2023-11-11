@@ -1,3 +1,4 @@
+import getpass
 import requests
 import pandas as pd
 from collections import OrderedDict
@@ -16,6 +17,8 @@ import matplotlib.patches as patches
 from matplotlib.pyplot import cm
 from astropy.coordinates import Distance
 import sys
+import configparser
+import getpass
 
 
 def plot_marvin(marvin_results):
@@ -474,6 +477,16 @@ def clean_panstarrs(panstarss):
     return panstarss_output
 
 
+def check_output_folder(output_folder):
+    # Check if the output folder exists
+    if not os.path.exists(output_folder):
+        # If not, create the folder
+        os.makedirs(output_folder)
+        print(f"Output folder '{output_folder}' created.")
+    else:
+        print('\n')
+
+
 class TNS_interogate:
     def __init__(self, TNS_name):
         self.TNS_name = TNS_name
@@ -576,5 +589,81 @@ def MARVIN(TNS_Name):
     plot_marvin(marvin_results)
 
 
+# Function to get login keys from the user
+
+def get_login_keys():
+    print("Please enter your login keys:")
+    lasair_token = getpass.getpass("lasair_token: ")
+    tns_api_key = getpass.getpass("tns_api_key: ")
+    tns_api_headers = getpass.getpass("tns_api_headers: ")
+    return lasair_token, tns_api_key, tns_api_headers
+
+# Function to save login keys to a configuration file
+
+
+def save_login_keys(keys):
+    config = configparser.ConfigParser()
+    config['LoginKeys'] = {
+        'lasair_token': keys[0],
+        'tns_api_key': keys[1],
+        'tns_api_headers': keys[2]
+    }
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+
+# Function to load login keys from the configuration file
+
+
+def load_login_keys():
+    config = configparser.ConfigParser()
+    try:
+        config.read('config.ini')
+        return (
+            config['LoginKeys']['lasair_token'],
+            config['LoginKeys']['tns_api_key'],
+            config['LoginKeys']['tns_api_headers']
+        )
+    except (configparser.NoSectionError, configparser.NoOptionError, KeyError):
+        keys = None
+    return keys
+
+
 if __name__ == "__main__":
+    # Check if the config exists
+
+    keys = load_login_keys()
+
+    if keys is None:
+        # If the file doesn't exist or keys are not present, get them from the user
+        keys = get_login_keys()
+        save_login_keys(keys)
+
+    # Set global variables for login keys
+    lasair_token, tns_api_key, tns_api_headers = keys
+
+    # Now you can use global_key1, global_key2, and global_key3 in your code
+    print("lasair_token:", lasair_token)
+    print("tns_api_key:", tns_api_key)
+    print("tns_api_headers:", tns_api_headers)
+
+
+if __name__ == "__main__":
+    # Check if the config exists
+    try:
+        keys = load_login_keys()
+    except (configparser.NoSectionError, configparser.NoOptionError, FileNotFoundError):
+        # If the file doesn't exist or keys are not present, get them from the user
+        keys = get_login_keys()
+        save_login_keys(keys)
+
+    # Set global variables for login keys
+    lasair_token, tns_api_key, tns_api_headers = keys
+
+    # Now you can use global_key1, global_key2, and global_key3 in your code
+    print("lasair_token:", lasair_token)
+    print("tns_api_key:", tns_api_key)
+    print("tns_api_headers:", tns_api_headers)
+
+    print(tns_api_headers)
+
     MARVIN(sys.argv[1])

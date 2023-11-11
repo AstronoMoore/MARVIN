@@ -1,5 +1,0 @@
-setup.py
-MARVIN.egg-info/PKG-INFO
-MARVIN.egg-info/SOURCES.txt
-MARVIN.egg-info/dependency_links.txt
-MARVIN.egg-info/top_level.txt
