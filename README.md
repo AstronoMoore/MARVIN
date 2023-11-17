@@ -1,5 +1,11 @@
 # MARVIN
 
+Installation:
+
+git clone https://github.com/AstronoMoore/MARVIN.git
+
+conda env create -f marvin.yml
+
 Usage:
 
 python MARVIN.py IAU_NAME_HERE 
