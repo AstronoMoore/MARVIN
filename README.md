@@ -2,7 +2,7 @@
 
 Installation:
 
-git clone https://github.com/AstronoMoore/MARVIN.git
+clone this repo
 
 cd MARVIN
 
