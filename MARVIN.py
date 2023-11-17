@@ -245,7 +245,6 @@ def PS_to_internal_name(PSNAME):
 
 def try_pst_forced(canid):
     canid = str(canid)  # converting to string
-    print(canid)
     ps1_string = "https://star.pst.qub.ac.uk/sne/ps13pi/psdb/lightcurveforced/"
     ps2_string = "https://star.pst.qub.ac.uk/sne/ps23pi/psdb/lightcurveforced/"
     data = []
@@ -253,20 +252,15 @@ def try_pst_forced(canid):
     try:
         data_ps1 = pd.read_csv(ps1_string + canid, delim_whitespace=True)
     except Exception as e:
-        print(e)
         print(f'No PS1 for {canid}')
         data_ps1 = pd.DataFrame()
-        print(data_ps1.empty)
 
     # try ps2
     try:
         data_ps2 = pd.read_csv(ps1_string + canid, delim_whitespace=True)
     except Exception as e:
-        print(e)
         print(f'No PS1 for {canid}')
         data_ps2 = pd.DataFrame()
-        print(data_ps2.empty)
-
     # Ifs to serve the available Pan-STARRS data to user
 
     if data_ps1.empty == False and data_ps2.empty == False:
@@ -317,7 +311,7 @@ def fetch_ztf(ztf_name):
 def fetch_ztf_cone(ra, dec):
     lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
     L = lasair(lasair_token)
-    print('Fetching ZTF through LASAIR')
+    print('Fetching ZTF through LASAIR cone search')
     response = L.cone(ra, dec, radius=1.5, requestType='all')
     data_ouput = fetch_ztf(response[0]['object'])
     return data_ouput
@@ -350,7 +344,6 @@ def fetch_neowise(ra, dec):
     url = "https://irsa.ipac.caltech.edu/cgi-bin/Gator/nph-query?catalog=neowiser_p1bs_psd&spatial=cone&radius=5&radunits=arcsec&objstr=" + \
         skycoord.ra.to_string(u.hour, alwayssign=True) + '+' + skycoord.dec.to_string(
             u.degree, alwayssign=True) + "&outfmt=1&selcols=ra,dec,mjd,w1mpro,w1sigmpro,w2mpro,w2sigmpro"
-    print(url)
     r = requests.get(url)
     table = Table.read(url, format='ascii')
     neowise_master = table.to_pandas()
@@ -399,46 +392,35 @@ def fetch_panstarrs_unforced(psname):
 
 def try_pst_unforced(canid):
     canid = str(canid)  # converting to string
-    print(canid)
     ps1_string = "https://star.pst.qub.ac.uk/sne/ps13pi/psdb/lightcurve/"
     ps2_string = "https://star.pst.qub.ac.uk/sne/ps23pi/psdb/lightcurve/"
     data = []
     # try ps1
     print('trying ps1')
     try:
-        print(ps1_string + canid)
         data_ps1 = pd.read_csv(ps1_string + canid, delim_whitespace=True)
-        print(data_ps1)
     except Exception as e:
-        print(e)
-        print(f'No PS1 for {canid}')
+        print(f'No PS1 unforced for {canid}')
         data_ps1 = pd.DataFrame()
-        print(data_ps1.empty)
 
     # try ps2
     try:
         data_ps2 = pd.read_csv(ps1_string + canid, delim_whitespace=True)
     except Exception as e:
-        print(e)
-        print(f'No PS1 for {canid}')
+        print(f'No PS1 unforced for {canid}')
         data_ps2 = pd.DataFrame()
-        print(data_ps2.empty)
 
     if data_ps1.empty == False and data_ps2.empty == False:
         output_data = pd.concat((data_ps1, data_ps2)).copy()
-        print('if1')
 
     if data_ps1.empty == False and data_ps2.empty == True:
         output_data = data_ps1
-        print('if2')
 
     if data_ps1.empty == True and data_ps2.empty == False:
         output_data = data_ps2
-        print('if3')
 
     if data_ps1.empty == True and data_ps2.empty == True:
         output_data = None
-        print('if4')
     return output_data
 
 
@@ -447,11 +429,7 @@ def clean_panstarrs(panstarss):
     panstarss['mjd_floor'] = np.floor(panstarss['#mjd'])
     panstarss = panstarss.replace(to_replace='None', value=np.nan).dropna()
     grouped = panstarss.groupby(['filter', 'mjd_floor'])
-    print(len(panstarss))
     panstarss = panstarss[panstarss['ujy'] >= 3 * panstarss['dujy']]
-    print(len(panstarss))
-
-    # panstarss.to_csv('raw_pst.csv',index = False)
 
     panstarss_output = pd.DataFrame(columns=['mjd', 'm', 'dm', 'filter'])
     count = 0
@@ -499,8 +477,6 @@ class TNS_interogate:
         self.gaia = None
         self.ztf = None
 
-        print(dict(tns_api_headers))
-
         url = 'https://www.wis-tns.org/api/get/object'  # TNS URL for object search
         tns_api_key = 'cb0fa7b0ddcc1ed5a4f18a82c1e01fb9092985ec'
         json_file = OrderedDict([("objname", self.TNS_name)])
@@ -513,7 +489,6 @@ class TNS_interogate:
             object_TNS_data = json_data['data']['reply']
             tns_object_info = pd.DataFrame(
                 [object_TNS_data.values()], columns=object_TNS_data)
-            print(tns_object_info)
             self.info = tns_object_info
             self.discoverer = tns_object_info.discoverer.item()
             self.type = tns_object_info['object_type'][0]['name']
