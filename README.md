@@ -4,6 +4,8 @@ Installation:
 
 git clone https://github.com/AstronoMoore/MARVIN.git
 
+cd MARVIN
+
 conda env create -f marvin.yml
 
 Usage:
