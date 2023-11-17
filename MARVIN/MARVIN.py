@@ -19,6 +19,7 @@ from astropy.coordinates import Distance
 import sys
 import configparser
 import getpass
+import yaml
 
 
 def plot_marvin(marvin_results):
@@ -205,7 +206,7 @@ def create_config(token, tns_api_key, tns_api_headers):
     config = configparser.ConfigParser()
     config.add_section('Global')
 
-    config.set('Global', 'Lasair_token', Lasair_token)
+    config.set('Global', 'Lasair_token', lasair_token)
     config.set('Global', 'tns_api_key', tns_api_key)
     config.set('Global', 'tns_api_headers', tns_api_headers)
 
@@ -284,8 +285,8 @@ def try_pst_forced(canid):
 
 
 def fetch_ztf(ztf_name):
-    Lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
-    L = lasair(Lasair_token)
+    lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
+    L = lasair(lasair_token)
     print('Fetching ZTF through LASAIR')
     objectList = [ztf_name]
     response = L.objects(objectList)
@@ -314,8 +315,8 @@ def fetch_ztf(ztf_name):
 
 
 def fetch_ztf_cone(ra, dec):
-    Lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
-    L = lasair(Lasair_token)
+    lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
+    L = lasair(lasair_token)
     print('Fetching ZTF through LASAIR')
     response = L.cone(ra, dec, radius=1.5, requestType='all')
     data_ouput = fetch_ztf(response[0]['object'])
@@ -478,9 +479,8 @@ def clean_panstarrs(panstarss):
 
 
 def check_output_folder(output_folder):
-    # Check if the output folder exists
+    # Check if folder exists
     if not os.path.exists(output_folder):
-        # If not, create the folder
         os.makedirs(output_folder)
         print(f"Output folder '{output_folder}' created.")
     else:
@@ -499,14 +499,14 @@ class TNS_interogate:
         self.gaia = None
         self.ztf = None
 
+        print(dict(tns_api_headers))
+
         url = 'https://www.wis-tns.org/api/get/object'  # TNS URL for object search
         tns_api_key = 'cb0fa7b0ddcc1ed5a4f18a82c1e01fb9092985ec'
         json_file = OrderedDict([("objname", self.TNS_name)])
         data = {'api_key': tns_api_key, 'data': json.dumps(json_file)}
         response = requests.post(url, data=data, headers={
                                  'User-Agent': 'tns_marker{"tns_id":165250,"type": "bot", "name":"MARVIN"}'})
-
-        print(self.TNS_name)
 
         if response.status_code == 200:
             json_data = json.loads(response.text, object_pairs_hook=dict)
@@ -580,10 +580,10 @@ class Heart_of_Gold:
 
 
 def MARVIN(TNS_Name):
-    Lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
-    tns_api_key = 'cb0fa7b0ddcc1ed5a4f18a82c1e01fb9092985ec'
-    tns_api_headers = str(
-        {'User-Agent': 'tns_marker{"tns_id":165250,"type": "bot", "name":"MARVIN"}'})
+    # Lasair_token = "336663f982474a379a934539e0d09860f6cb69cb"
+    # tns_api_key = 'cb0fa7b0ddcc1ed5a4f18a82c1e01fb9092985ec'
+    # tns_api_headers = str(
+    #     {'User-Agent': 'tns_marker{"tns_id":165250,"type": "bot", "name":"MARVIN"}'})
     marvin_results = Heart_of_Gold(TNS_Name)
     marvin_results.data.to_csv(TNS_Name + '.csv', index=False)
     plot_marvin(marvin_results)
@@ -596,6 +596,7 @@ def get_login_keys():
     lasair_token = getpass.getpass("lasair_token: ")
     tns_api_key = getpass.getpass("tns_api_key: ")
     tns_api_headers = getpass.getpass("tns_api_headers: ")
+
     return lasair_token, tns_api_key, tns_api_headers
 
 # Function to save login keys to a configuration file
@@ -618,10 +619,15 @@ def load_login_keys():
     config = configparser.ConfigParser()
     try:
         config.read('config.ini')
+        tns_api_headers = config['LoginKeys']['tns_api_headers']
+        tns_api_headers = {'User-Agent': tns_api_headers}
+
+        print(tns_api_headers)
+
         return (
             config['LoginKeys']['lasair_token'],
             config['LoginKeys']['tns_api_key'],
-            config['LoginKeys']['tns_api_headers']
+            tns_api_headers
         )
     except (configparser.NoSectionError, configparser.NoOptionError, KeyError):
         keys = None
@@ -640,30 +646,23 @@ if __name__ == "__main__":
 
     # Set global variables for login keys
     lasair_token, tns_api_key, tns_api_headers = keys
+    print(tns_api_headers)
 
-    # Now you can use global_key1, global_key2, and global_key3 in your code
-    print("lasair_token:", lasair_token)
-    print("tns_api_key:", tns_api_key)
-    print("tns_api_headers:", tns_api_headers)
-
-
-if __name__ == "__main__":
-    # Check if the config exists
-    try:
-        keys = load_login_keys()
-    except (configparser.NoSectionError, configparser.NoOptionError, FileNotFoundError):
-        # If the file doesn't exist or keys are not present, get them from the user
-        keys = get_login_keys()
-        save_login_keys(keys)
+# if __name__ == "__main__":
+#     # Check if the config exists
+#     try:
+#         keys = load_login_keys()
+#     except (configparser.NoSectionError, configparser.NoOptionError, FileNotFoundError):
+#         # If the file doesn't exist or keys are not present, get them from the user
+#         keys = get_login_keys()
+#         save_login_keys(keys)
 
     # Set global variables for login keys
-    lasair_token, tns_api_key, tns_api_headers = keys
+    # lasair_token, tns_api_key, tns_api_headers = keys
 
     # Now you can use global_key1, global_key2, and global_key3 in your code
-    print("lasair_token:", lasair_token)
-    print("tns_api_key:", tns_api_key)
-    print("tns_api_headers:", tns_api_headers)
-
-    print(tns_api_headers)
+    # print("lasair_token:", lasair_token)
+    # print("tns_api_key:", tns_api_key)
+    # print("tns_api_headers:", tns_api_headers)
 
     MARVIN(sys.argv[1])
